@@ -1,0 +1,203 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int  crc_value (int num,int crc_in);
+int  crc16(int *fp, int length);
+
+int main(void)
+{
+ int i;
+ int length;
+ int width;
+ int j;
+
+ printf("请输入数据长度(整数)：");
+ while (scanf("%d",&length)!=1)
+  printf("输入格式不对，请重新输入数据长度(整数)：");
+ 
+ getchar();
+ printf("请输入位宽大小(1,4,8)：");
+ width_in:
+ {
+   scanf("%d",&width);
+  if(width!=1&&width !=4&&width!=8)
+    { printf("输入格式不对，请重新输入位宽大小(1,4,8)：");
+      goto width_in;
+ }
+ getchar();
+ int data_temp_1[length*8/width];
+ int data_temp[width][length*8/width];
+ int data_num;
+ int crc_1;
+ int crc[width];
+ int crc_data[16];
+ int crc_temp[width];
+ 
+ char  data_char;
+ data_in:
+ { 
+ printf("请输入%d个数据（十六进制）：",length);
+ for(i=0;i<length*2;i++)
+ { 
+  scanf("%c",&data_char);
+  if(data_char=='\n')
+  {
+   printf("您输入的数长度不对，请重新输入\n");
+   goto data_in;
+   }
+  else {
+   switch (data_char)
+   {
+    case '0':data_num =0;break;
+    case '1':data_num =1;break;
+    case '2':data_num =2;break;
+    case '3':data_num =3;break;  
+    case '4':data_num =4;break;
+    case '5':data_num =5;break;
+    case '6':data_num =6;break;
+    case '7':data_num =7;break;
+    case '8':data_num =8;break;
+    case '9':data_num =9;break;
+    case 'a':data_num =10;break;
+    case 'b':data_num =11;break;
+    case 'c':data_num =12;break;  
+    case 'd':data_num =13;break;
+    case 'e':data_num =14;break;
+    case 'f':data_num =15;break;
+    default:{
+     printf("您输入的数格式不对，不是十六进制数，请重新输入\n");
+     goto data_in;
+     break;
+     }
+
+   }
+   switch (width)
+   {
+    case 1:{
+      for(j=0;j<4;j++)
+       {
+        data_temp_1[(i+1)*4-j-1] = data_num %2;
+        data_num = data_num /2;  
+       }
+      break;
+      }
+   case 4:{
+      for(j=0;j<4;j++)
+       {
+        data_temp[j][i] = data_num %2;
+        data_num = data_num /2;  
+       }
+      break;
+      }
+   case 8:{
+      for(j=0;j<4;j++)
+       {
+        if(i%2==0)
+        {
+        data_temp[j+4][i/2] = data_num %2;
+        data_num = data_num /2;  
+        }
+        else 
+        {
+        data_temp[j][(i-1)/2] = data_num %2;
+        data_num = data_num /2;  
+        }
+       }
+      break;
+      }
+   default:break;
+   }
+ }
+}
+}
+
+ switch (width)
+   {
+    case 1:{
+      crc_1 = crc16(data_temp_1,length*8/width);
+      printf("CRC值：%X\n",crc_1);
+      break;
+      }
+   case 4:{
+      for(j=0;j<width;j++)
+       {
+       crc[j] = crc16(data_temp[j],length*8/width);
+       }
+    
+    for(i=0;i<16;i++) 
+    { 
+     for(j=0;j<width;j++)
+       {
+       crc_temp[j]= crc[j]%2;
+       crc[j]= crc[j]/2;
+       }
+      crc_data[i] = crc_temp[3]*8+ crc_temp[2]*4+ crc_temp[1]*2+ crc_temp[0];
+      crc_data[i] = crc_data[i] &0xf;
+     }
+      printf("CRC值：");
+      for(i=0;i<16;i++) 
+      printf("%x",crc_data[15-i]);
+      printf("\n");
+    break;
+      }
+   case 8:{
+      for(j=0;j<width;j++)
+       {
+       crc[j] = crc16(data_temp[j],length*8/width);
+       }
+  
+    for(i=0;i<16;i++) 
+    { 
+     for(j=0;j<8;j++)
+       {
+       crc_temp[j]= crc[j]%2;
+       crc[j]= crc[j]/2;
+       }
+      crc_data[i] = crc_temp[7]*128+ crc_temp[6]*64+ crc_temp[5]*32+ crc_temp[4]*16+crc_temp[3]*8+ crc_temp[2]*4+ crc_temp[1]*2+ crc_temp[0];
+      crc_data[i] = crc_data[i] &0xff;
+    }
+      printf("CRC值：");
+      for(i=0;i<16;i++) 
+      printf("%x",crc_data[15-i]);
+      printf("\n");
+      break;
+      }
+ 
+   default:break;
+   }
+
+
+ return 1;
+}
+}
+
+int  crc16(int *fp, int length)
+{
+ int i;
+ int crc_in =0;
+
+ if (( fp==0 )||( length==0 ))
+ {
+  return 0;
+ }
+ for(i=0;i<length;i++)
+ { 
+    crc_in = crc_value(fp[i],crc_in);
+  }
+  return crc_in;
+}
+
+int crc_value (int num,int crc_in)
+{
+ int crc_out;
+ int crc_temp;
+ crc_in = crc_in ^ (num<<15);
+ crc_temp = crc_in << 1;
+ if ((crc_in & 0x8000) == 0x8000)
+      crc_out =  crc_temp^ 0x1021;
+ else 
+	crc_out =  crc_temp;
+  crc_out = crc_out & 0xffff;
+  return crc_out;
+}
