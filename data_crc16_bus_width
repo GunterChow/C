@@ -159,7 +159,7 @@ int main(void)
     }
       printf("CRC值：");
       for(i=0;i<16;i++) 
-      printf("%x",crc_data[15-i]);
+      printf("%02x",crc_data[15-i]);
       printf("\n");
       break;
       }
